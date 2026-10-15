@@ -1,0 +1,23 @@
+name: Validate portfolio
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python syntax and notebook files
+        run: |
+          python - <<'PY'
+          import ast, json, pathlib
+          for p in pathlib.Path('.').rglob('*.py'):
+              if '.git' not in p.parts:
+                  ast.parse(p.read_text(encoding='utf-8'))
+          for p in pathlib.Path('.').rglob('*.ipynb'):
+              doc=json.loads(p.read_text(encoding='utf-8'))
+              assert doc.get('nbformat', 0) >= 4, p
+              assert isinstance(doc.get('cells'), list), p
+          print('Static validation passed')
+          PY
